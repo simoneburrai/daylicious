@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model categories {
+  category_id     BigInt            @id @default(autoincrement())
+  name            Json
+  description     Json?
+  category_values category_values[]
+}
+
+model category_values {
+  category_value_id      BigInt                   @id @default(autoincrement())
+  category_id            BigInt
+  value                  Json
+  description            Json?
+  illustration_url       String?                  @db.VarChar(255)
+  categories             categories               @relation(fields: [category_id], references: [category_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_category")
+  recipe_category_values recipe_category_values[]
+
+  @@unique([category_id, value])
+}
+
+model ingredient_categories {
+  ing_category_id  BigInt        @id @default(autoincrement())
+  name             Json
+  description      Json?
+  illustration_url String?       @db.VarChar(255)
+  ingredients      ingredients[]
+}
+
+model ingredient_variations {
+  variation_id              BigInt               @id @default(autoincrement())
+  ingredient_id             BigInt
+  variation_name            Json
+  description               Json?
+  specific_illustration_url String?              @db.VarChar(255)
+  ingredients               ingredients          @relation(fields: [ingredient_id], references: [ingredient_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ingredient")
+  recipe_ingredients        recipe_ingredients[]
+  user_ingredients          user_ingredients[]
+
+  @@unique([ingredient_id, variation_name])
+}
+
+model ingredients {
+  ingredient_id         BigInt                  @id @default(autoincrement())
+  ing_category_id       BigInt
+  name                  Json
+  illustration_url      String?                 @db.VarChar(255)
+  ingredient_variations ingredient_variations[]
+  ingredient_categories ingredient_categories   @relation(fields: [ing_category_id], references: [ing_category_id], onUpdate: NoAction, map: "fk_ingredient_category")
+}
+
+model meal_plan_entries {
+  meal_plan_entry_id BigInt     @id @default(autoincrement())
+  meal_plan_id       BigInt
+  recipe_id          BigInt
+  plan_date          DateTime   @db.Date
+  meal_type          String     @db.VarChar(50)
+  servings_planned   Int?       @default(1)
+  meal_plans         meal_plans @relation(fields: [meal_plan_id], references: [meal_plan_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_meal_plan")
+  recipes            recipes    @relation(fields: [recipe_id], references: [recipe_id], onUpdate: NoAction, map: "fk_meal_plan_recipe")
+
+  @@unique([meal_plan_id, plan_date, meal_type, recipe_id])
+}
+
+model meal_plans {
+  meal_plan_id      BigInt              @id @default(autoincrement())
+  user_id           BigInt
+  plan_name         String?             @db.VarChar(100)
+  start_date        DateTime            @db.Date
+  end_date          DateTime            @db.Date
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  meal_plan_entries meal_plan_entries[]
+  users             users               @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_meal_plan")
+}
+
+model recipe_category_values {
+  recipe_category_value_id BigInt          @id @default(autoincrement())
+  recipe_id                BigInt
+  category_value_id        BigInt
+  category_values          category_values @relation(fields: [category_value_id], references: [category_value_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_category_value")
+  recipes                  recipes         @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipe")
+
+  @@unique([recipe_id, category_value_id])
+}
+
+model recipe_ingredients {
+  recipe_ingredient_id  BigInt                @id @default(autoincrement())
+  recipe_id             BigInt
+  variation_id          BigInt
+  quantity              Decimal?              @db.Decimal(10, 2)
+  unit                  String?               @db.VarChar(20)
+  ingredient_variations ingredient_variations @relation(fields: [variation_id], references: [variation_id], onUpdate: NoAction, map: "fk_ingredient_variation")
+  recipes               recipes               @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipe_ing")
+
+  @@unique([recipe_id, variation_id])
+}
+
+model recipes {
+  recipe_id              BigInt                   @id @default(autoincrement())
+  name                   Json
+  description            Json?
+  prep_time_minutes      Int?
+  cook_time_minutes      Int?
+  servings               Int
+  external_url           String                   @db.VarChar(255)
+  illustration_url       String?                  @db.VarChar(255)
+  created_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  meal_plan_entries      meal_plan_entries[]
+  recipe_category_values recipe_category_values[]
+  recipe_ingredients     recipe_ingredients[]
+}
+
+model user_ingredients {
+  user_ingredient_id    BigInt                @id @default(autoincrement())
+  user_id               BigInt
+  variation_id          BigInt
+  quantity              Decimal?              @db.Decimal(10, 2)
+  unit                  String?               @db.VarChar(20)
+  added_at              DateTime?             @default(now()) @db.Timestamptz(6)
+  expiration_date       DateTime?             @db.Date
+  users                 users                 @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_ing")
+  ingredient_variations ingredient_variations @relation(fields: [variation_id], references: [variation_id], onUpdate: NoAction, map: "fk_user_ingredient_variation")
+
+  @@unique([user_id, variation_id])
+}
+
+model users {
+  user_id          BigInt             @id @default(autoincrement())
+  username         String             @unique @db.VarChar(50)
+  email            String             @unique @db.VarChar(100)
+  password_hash    String             @db.VarChar(255)
+  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  last_login       DateTime?          @db.Timestamptz(6)
+  is_premium       Boolean?           @default(false)
+  role             UserRole           @default(USER)
+  meal_plans       meal_plans[]
+  user_ingredients user_ingredients[]
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}

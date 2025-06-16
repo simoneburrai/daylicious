@@ -1,0 +1,139 @@
+Struttura del Database per Daylicious (Base + Categorie)
+1. Tabella: Users (Utenti)
+Colonna	Tipo di Dato	Descrizione	Note
+user_id	UUID	Chiave Primaria, ID univoco dell'utente	Generato automaticamente
+username	VARCHAR(50)	Nome utente (deve essere unico)	
+email	VARCHAR(100)	Indirizzo email (deve essere unico)	
+password_hash	VARCHAR(255)	Hash della password (MAI in chiaro!)	
+created_at	TIMESTAMP WITH TIME ZONE	Data e ora di creazione dell'account	Default: data/ora attuali
+last_login	TIMESTAMP WITH TIME ZONE	Data e ora dell'ultimo accesso	Può essere NULL
+is_premium	BOOLEAN	Flag per utente premium	Default: FALSE
+
+Esporta in Fogli
+2. Tabella: Categories (Tipi di Categoria Generici per Ricette)
+Questa tabella definisce i "tipi" di categorie (es. Nazionalità, Tipo di Piatto, Dieta Speciale).
+
+Colonna	Tipo di Dato	Descrizione	Note
+category_id	UUID	Chiave Primaria, ID univoco del tipo di categoria	Generato automaticamente
+name	VARCHAR(100)	Nome del tipo di categoria (es. "Nazionalità", "Tipo di Piatto")	Deve essere unico
+description	TEXT	Descrizione del tipo di categoria	Può essere NULL
+
+Esporta in Fogli
+3. Tabella: CategoryValues (Valori Specifici delle Categorie per Ricette)
+Questa tabella contiene i valori specifici di ogni categoria (es. "Italiana", "Primo Piatto", "Vegetariana"), collegati al loro tipo di categoria.
+
+Colonna	Tipo di Dato	Descrizione	Note
+category_value_id	UUID	Chiave Primaria, ID univoco del valore di categoria	Generato automaticamente
+category_id	UUID	Chiave Esterna verso Categories(category_id)	Obbligatorio
+value	VARCHAR(100)	Valore specifico (es. "Italiana", "Primo Piatto", "Vegana")	Deve essere unico per category_id
+description	TEXT	Descrizione del valore	Può essere NULL
+illustration_url	VARCHAR(255)	URL dell'illustrazione/icona del valore	Può essere NULL
+
+Esporta in Fogli
+4. Tabella: IngredientCategories (Categorie per Ingredienti)
+Questa tabella definisce le categorie a cui appartengono gli ingredienti (es. "Carboidrati", "Verdura").
+
+Colonna	Tipo di Dato	Descrizione	Note
+ing_category_id	UUID	Chiave Primaria, ID univoco della categoria ingrediente	Generato automaticamente
+name	VARCHAR(100)	Nome della categoria ingrediente (es. "Carboidrati", "Verdura")	Deve essere unico
+description	TEXT	Descrizione della categoria	Può essere NULL
+illustration_url	VARCHAR(255)	URL dell'illustrazione/icona della categoria	Può essere NULL
+
+Esporta in Fogli
+5. Tabella: Ingredients (Catalogo Ingredienti)
+Questa tabella contiene il catalogo master degli ingredienti generici (es. "Pomodoro", "Basilico").
+
+Colonna	Tipo di Dato	Descrizione	Note
+ingredient_id	UUID	Chiave Primaria, ID univoco dell'ingrediente	Generato automaticamente
+ing_category_id	UUID	Chiave Esterna verso IngredientCategories(ing_category_id)	Obbligatorio
+name	VARCHAR(100)	Nome dell'ingrediente (es. "Pomodoro")	Deve essere unico
+illustration_url	VARCHAR(255)	URL dell'illustrazione generica dell'ingrediente (su CDN)	Può essere NULL
+
+Esporta in Fogli
+6. Tabella: IngredientVariations (Varianti Specifiche degli Ingredienti)
+Questa tabella gestisce le varianti specifiche per gli ingredienti generici (es. "Pomodoro San Marzano", "Basilico Fresco").
+
+Colonna	Tipo di Dato	Descrizione	Note
+variation_id	UUID	Chiave Primaria, ID univoco della variante	Generato automaticamente
+ingredient_id	UUID	Chiave Esterna verso Ingredients(ingredient_id)	Obbligatorio
+variation_name	VARCHAR(100)	Nome specifico della variante (es. "San Marzano", "Fresco", "Barilla")	Deve essere unico per ingredient_id
+description	TEXT	Descrizione aggiuntiva della variante	Può essere NULL
+specific_illustration_url	VARCHAR(255)	URL dell'illustrazione specifica della variante (se diversa)	Può essere NULL
+
+Esporta in Fogli
+7. Tabella: Recipes (Catalogo Ricette)
+Questa tabella contiene le ricette, ogni riga è una ricetta completa e unica.
+
+Colonna	Tipo di Dato	Descrizione	Note
+recipe_id	UUID	Chiave Primaria, ID univoco della ricetta	Generato automaticamente
+name	VARCHAR(255)	Nome della ricetta (es. "Lasagna Classica alla Bolognese")	Deve essere unico
+description	TEXT	Breve descrizione	Può essere NULL
+prep_time_minutes	INTEGER	Tempo di preparazione in minuti	Può essere NULL
+cook_time_minutes	INTEGER	Tempo di cottura in minuti	Può essere NULL
+servings	INTEGER	Numero di porzioni	
+external_url	VARCHAR(255)	URL al sito esterno con la ricetta completa	Obbligatorio
+illustration_url	VARCHAR(255)	URL dell'illustrazione della ricetta (su CDN)	Può essere NULL
+created_at	TIMESTAMP WITH TIME ZONE	Data di aggiunta della ricetta al database	Default: data/ora attuali
+
+Esporta in Fogli
+8. Tabella: RecipeCategoryValues (Collegamento Ricette a Valori di Categoria)
+Questa è la tabella di join tra Recipes e CategoryValues, permettendo a una ricetta di avere più valori di categoria.
+
+Colonna	Tipo di Dato	Descrizione	Note
+recipe_category_value_id	UUID	Chiave Primaria, ID univoco del collegamento	Generato automaticamente
+recipe_id	UUID	Chiave Esterna verso Recipes(recipe_id)	Obbligatorio
+category_value_id	UUID	Chiave Esterna verso CategoryValues(category_value_id)	Obbligatorio
+UNIQUE(recipe_id, category_value_id)		Assicura che una ricetta non abbia lo stesso valore di categoria due volte	
+
+Esporta in Fogli
+9. Tabella: RecipeIngredients (Ingredienti per Ricetta)
+Questa tabella collega le ricette agli ingredienti specifici (varianti) e definisce le quantità.
+
+Colonna	Tipo di Dato	Descrizione	Note
+recipe_ingredient_id	UUID	Chiave Primaria, ID univoco del record	Generato automaticamente
+recipe_id	UUID	Chiave Esterna verso Recipes(recipe_id)	Obbligatorio
+variation_id	UUID	Chiave Esterna verso IngredientVariations(variation_id)	Obbligatorio
+quantity	DECIMAL(10, 2)	Quantità richiesta di questo ingrediente per la ricetta	Es. 200, 1.5
+unit	VARCHAR(20)	Unità di misura (es. "g", "ml", "pezzi")	Importante: Potresti voler collegare a una tabella Units in futuro.
+UNIQUE(recipe_id, variation_id)		Assicura che una ricetta non abbia lo stesso ingrediente/variante due volte	
+
+Esporta in Fogli
+10. Tabella: UserIngredients (Ingredienti dell'Utente - "Frigo/Dispensa")
+Questa tabella tiene traccia degli ingredienti specifici (varianti) che ogni utente ha.
+
+Colonna	Tipo di Dato	Descrizione	Note
+user_ingredient_id	UUID	Chiave Primaria, ID univoco del record	Generato automaticamente
+user_id	UUID	Chiave Esterna verso Users(user_id)	Obbligatorio
+variation_id	UUID	Chiave Esterna verso IngredientVariations(variation_id)	Obbligatorio
+quantity	DECIMAL(10, 2)	Quantità disponibile dell'ingrediente per l'utente	Può essere NULL
+unit	VARCHAR(20)	Unità di misura	Importante: Potresti voler collegare a una tabella Units in futuro.
+added_at	TIMESTAMP WITH TIME ZONE	Data e ora di aggiunta dell'ingrediente dall'utente	Default: data/ora attuali
+expiration_date	DATE	Data di scadenza dell'ingrediente	Può essere NULL
+UNIQUE(user_id, variation_id)		Un utente non può avere lo stesso ingrediente/variante ripetuto	
+
+Esporta in Fogli
+11. Tabella: MealPlans (Piani Pasto dell'Utente)
+Questa tabella rappresenta un piano pasto generale creato da un utente.
+
+Colonna	Tipo di Dato	Descrizione	Note
+meal_plan_id	UUID	Chiave Primaria, ID univoco del piano pasto	Generato automaticamente
+user_id	UUID	Chiave Esterna verso Users(user_id)	Obbligatorio
+plan_name	VARCHAR(100)	Nome del piano (es. "Meal Prep Settimanale")	Può essere NULL
+start_date	DATE	Data di inizio del piano pasto	Obbligatorio
+end_date	DATE	Data di fine del piano pasto	Obbligatorio
+created_at	TIMESTAMP WITH TIME ZONE	Data e ora di creazione del piano pasto	Default: data/ora attuali
+
+Esporta in Fogli
+12. Tabella: MealPlanEntries (Voci del Piano Pasto)
+Questa tabella specifica quali ricette sono incluse in quale piano pasto, per quale giorno e per quale tipo di pasto.
+
+Colonna	Tipo di Dato	Descrizione	Note
+meal_plan_entry_id	UUID	Chiave Primaria, ID univoco della voce del piano	Generato automaticamente
+meal_plan_id	UUID	Chiave Esterna verso MealPlans(meal_plan_id)	Obbligatorio
+recipe_id	UUID	Chiave Esterna verso Recipes(recipe_id)	Obbligatorio
+plan_date	DATE	Data specifica del pasto (es. 2025-06-10)	Obbligatorio
+meal_type	VARCHAR(50)	Tipo di pasto (es. 'Breakfast', 'Lunch', 'Dinner', 'Snack')	Obbligatorio
+servings_planned	INTEGER	Numero di porzioni pianificate per questo pasto	Default: 1
+UNIQUE(meal_plan_id, plan_date, meal_type, recipe_id)		Assicura unicità per pasto specifico in un piano	
+
+Esporta in Fogli
