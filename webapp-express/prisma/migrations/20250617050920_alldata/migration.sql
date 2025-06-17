@@ -3,7 +3,7 @@ CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'USER');
 
 -- CreateTable
 CREATE TABLE "categories" (
-    "category_id" BIGSERIAL NOT NULL,
+    "category_id" SERIAL NOT NULL,
     "name" JSONB NOT NULL,
     "description" JSONB,
 
@@ -12,8 +12,8 @@ CREATE TABLE "categories" (
 
 -- CreateTable
 CREATE TABLE "category_values" (
-    "category_value_id" BIGSERIAL NOT NULL,
-    "category_id" BIGINT NOT NULL,
+    "category_value_id" SERIAL NOT NULL,
+    "category_id" INTEGER NOT NULL,
     "value" JSONB NOT NULL,
     "description" JSONB,
     "illustration_url" VARCHAR(255),
@@ -23,7 +23,7 @@ CREATE TABLE "category_values" (
 
 -- CreateTable
 CREATE TABLE "ingredient_categories" (
-    "ing_category_id" BIGSERIAL NOT NULL,
+    "ing_category_id" SERIAL NOT NULL,
     "name" JSONB NOT NULL,
     "description" JSONB,
     "illustration_url" VARCHAR(255),
@@ -33,8 +33,8 @@ CREATE TABLE "ingredient_categories" (
 
 -- CreateTable
 CREATE TABLE "ingredient_variations" (
-    "variation_id" BIGSERIAL NOT NULL,
-    "ingredient_id" BIGINT NOT NULL,
+    "variation_id" SERIAL NOT NULL,
+    "ingredient_id" INTEGER NOT NULL,
     "variation_name" JSONB NOT NULL,
     "description" JSONB,
     "specific_illustration_url" VARCHAR(255),
@@ -44,8 +44,8 @@ CREATE TABLE "ingredient_variations" (
 
 -- CreateTable
 CREATE TABLE "ingredients" (
-    "ingredient_id" BIGSERIAL NOT NULL,
-    "ing_category_id" BIGINT NOT NULL,
+    "ingredient_id" SERIAL NOT NULL,
+    "ing_category_id" INTEGER NOT NULL,
     "name" JSONB NOT NULL,
     "illustration_url" VARCHAR(255),
 
@@ -54,9 +54,9 @@ CREATE TABLE "ingredients" (
 
 -- CreateTable
 CREATE TABLE "meal_plan_entries" (
-    "meal_plan_entry_id" BIGSERIAL NOT NULL,
-    "meal_plan_id" BIGINT NOT NULL,
-    "recipe_id" BIGINT NOT NULL,
+    "meal_plan_entry_id" SERIAL NOT NULL,
+    "meal_plan_id" INTEGER NOT NULL,
+    "recipe_id" INTEGER NOT NULL,
     "plan_date" DATE NOT NULL,
     "meal_type" VARCHAR(50) NOT NULL,
     "servings_planned" INTEGER DEFAULT 1,
@@ -66,8 +66,8 @@ CREATE TABLE "meal_plan_entries" (
 
 -- CreateTable
 CREATE TABLE "meal_plans" (
-    "meal_plan_id" BIGSERIAL NOT NULL,
-    "user_id" BIGINT NOT NULL,
+    "meal_plan_id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
     "plan_name" VARCHAR(100),
     "start_date" DATE NOT NULL,
     "end_date" DATE NOT NULL,
@@ -78,18 +78,18 @@ CREATE TABLE "meal_plans" (
 
 -- CreateTable
 CREATE TABLE "recipe_category_values" (
-    "recipe_category_value_id" BIGSERIAL NOT NULL,
-    "recipe_id" BIGINT NOT NULL,
-    "category_value_id" BIGINT NOT NULL,
+    "recipe_category_value_id" SERIAL NOT NULL,
+    "recipe_id" INTEGER NOT NULL,
+    "category_value_id" INTEGER NOT NULL,
 
     CONSTRAINT "recipe_category_values_pkey" PRIMARY KEY ("recipe_category_value_id")
 );
 
 -- CreateTable
 CREATE TABLE "recipe_ingredients" (
-    "recipe_ingredient_id" BIGSERIAL NOT NULL,
-    "recipe_id" BIGINT NOT NULL,
-    "variation_id" BIGINT NOT NULL,
+    "recipe_ingredient_id" SERIAL NOT NULL,
+    "recipe_id" INTEGER NOT NULL,
+    "variation_id" INTEGER NOT NULL,
     "quantity" DECIMAL(10,2),
     "unit" VARCHAR(20),
 
@@ -98,7 +98,7 @@ CREATE TABLE "recipe_ingredients" (
 
 -- CreateTable
 CREATE TABLE "recipes" (
-    "recipe_id" BIGSERIAL NOT NULL,
+    "recipe_id" SERIAL NOT NULL,
     "name" JSONB NOT NULL,
     "description" JSONB,
     "prep_time_minutes" INTEGER,
@@ -113,9 +113,9 @@ CREATE TABLE "recipes" (
 
 -- CreateTable
 CREATE TABLE "user_ingredients" (
-    "user_ingredient_id" BIGSERIAL NOT NULL,
-    "user_id" BIGINT NOT NULL,
-    "variation_id" BIGINT NOT NULL,
+    "user_ingredient_id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "variation_id" INTEGER NOT NULL,
     "quantity" DECIMAL(10,2),
     "unit" VARCHAR(20),
     "added_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
@@ -126,7 +126,7 @@ CREATE TABLE "user_ingredients" (
 
 -- CreateTable
 CREATE TABLE "users" (
-    "user_id" BIGSERIAL NOT NULL,
+    "user_id" SERIAL NOT NULL,
     "username" VARCHAR(50) NOT NULL,
     "email" VARCHAR(100) NOT NULL,
     "password_hash" VARCHAR(255) NOT NULL,

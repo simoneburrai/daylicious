@@ -1,23 +1,20 @@
 import express from 'express';
+import { PrismaClient } from "./generated/prisma";
 import './db';
 import dotenv from 'dotenv';
 import cors from "cors";
 import recipeRouter from './routers/recipeRouter';
+import ingredientRouter from './routers/ingredientRouter';
+import authRouter from './routers/authRouter';
 dotenv.config();
 
 console.log('Loaded ENV PORT:', process.env.PORT); 
 
 const app = express();
 const port : number = Number(process.env.PORT);
+const prisma = new PrismaClient();
 
 
-//Gestione dei BigInt generati da Prisma
-app.set('json replacer', (_key: string, value: any) => {
-    if (typeof value === 'bigint') {
-        return value.toString();
-    }
-    return value;
-})
 
 // Configurazione CORS
 const corsOptions = {
@@ -47,9 +44,14 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
-app.use("/recipes", recipeRouter);
+app.use("/api/", authRouter);
+app.use("/api/recipes", recipeRouter);
+app.use("/api/ingredients", ingredientRouter);
 
 // Server in Ascolto nella Porta Specificata;
 app.listen(port, () => {
   console.log(`Server Express in ascolto su http://localhost:${port}`);
 });
+
+
+export default prisma;

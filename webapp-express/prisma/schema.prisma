@@ -9,15 +9,15 @@ datasource db {
 }
 
 model categories {
-  category_id     BigInt            @id @default(autoincrement())
+  category_id     Int            @id @default(autoincrement())
   name            Json
   description     Json?
   category_values category_values[]
 }
 
 model category_values {
-  category_value_id      BigInt                   @id @default(autoincrement())
-  category_id            BigInt
+  category_value_id      Int                   @id @default(autoincrement())
+  category_id            Int
   value                  Json
   description            Json?
   illustration_url       String?                  @db.VarChar(255)
@@ -28,7 +28,7 @@ model category_values {
 }
 
 model ingredient_categories {
-  ing_category_id  BigInt        @id @default(autoincrement())
+  ing_category_id  Int        @id @default(autoincrement())
   name             Json
   description      Json?
   illustration_url String?       @db.VarChar(255)
@@ -36,8 +36,8 @@ model ingredient_categories {
 }
 
 model ingredient_variations {
-  variation_id              BigInt               @id @default(autoincrement())
-  ingredient_id             BigInt
+  variation_id              Int               @id @default(autoincrement())
+  ingredient_id             Int
   variation_name            Json
   description               Json?
   specific_illustration_url String?              @db.VarChar(255)
@@ -49,8 +49,8 @@ model ingredient_variations {
 }
 
 model ingredients {
-  ingredient_id         BigInt                  @id @default(autoincrement())
-  ing_category_id       BigInt
+  ingredient_id         Int                  @id @default(autoincrement())
+  ing_category_id       Int
   name                  Json
   illustration_url      String?                 @db.VarChar(255)
   ingredient_variations ingredient_variations[]
@@ -58,9 +58,9 @@ model ingredients {
 }
 
 model meal_plan_entries {
-  meal_plan_entry_id BigInt     @id @default(autoincrement())
-  meal_plan_id       BigInt
-  recipe_id          BigInt
+  meal_plan_entry_id Int     @id @default(autoincrement())
+  meal_plan_id       Int
+  recipe_id          Int
   plan_date          DateTime   @db.Date
   meal_type          String     @db.VarChar(50)
   servings_planned   Int?       @default(1)
@@ -71,8 +71,8 @@ model meal_plan_entries {
 }
 
 model meal_plans {
-  meal_plan_id      BigInt              @id @default(autoincrement())
-  user_id           BigInt
+  meal_plan_id      Int              @id @default(autoincrement())
+  user_id           Int
   plan_name         String?             @db.VarChar(100)
   start_date        DateTime            @db.Date
   end_date          DateTime            @db.Date
@@ -82,9 +82,9 @@ model meal_plans {
 }
 
 model recipe_category_values {
-  recipe_category_value_id BigInt          @id @default(autoincrement())
-  recipe_id                BigInt
-  category_value_id        BigInt
+  recipe_category_value_id Int          @id @default(autoincrement())
+  recipe_id                Int
+  category_value_id        Int
   category_values          category_values @relation(fields: [category_value_id], references: [category_value_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_category_value")
   recipes                  recipes         @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipe")
 
@@ -92,9 +92,9 @@ model recipe_category_values {
 }
 
 model recipe_ingredients {
-  recipe_ingredient_id  BigInt                @id @default(autoincrement())
-  recipe_id             BigInt
-  variation_id          BigInt
+  recipe_ingredient_id  Int                @id @default(autoincrement())
+  recipe_id             Int
+  variation_id          Int
   quantity              Decimal?              @db.Decimal(10, 2)
   unit                  String?               @db.VarChar(20)
   ingredient_variations ingredient_variations @relation(fields: [variation_id], references: [variation_id], onUpdate: NoAction, map: "fk_ingredient_variation")
@@ -104,7 +104,7 @@ model recipe_ingredients {
 }
 
 model recipes {
-  recipe_id              BigInt                   @id @default(autoincrement())
+  recipe_id              Int                   @id @default(autoincrement())
   name                   Json
   description            Json?
   prep_time_minutes      Int?
@@ -119,9 +119,9 @@ model recipes {
 }
 
 model user_ingredients {
-  user_ingredient_id    BigInt                @id @default(autoincrement())
-  user_id               BigInt
-  variation_id          BigInt
+  user_ingredient_id    Int                @id @default(autoincrement())
+  user_id               Int
+  variation_id          Int
   quantity              Decimal?              @db.Decimal(10, 2)
   unit                  String?               @db.VarChar(20)
   added_at              DateTime?             @default(now()) @db.Timestamptz(6)
@@ -133,7 +133,7 @@ model user_ingredients {
 }
 
 model users {
-  user_id          BigInt             @id @default(autoincrement())
+  user_id          Int             @id @default(autoincrement())
   username         String             @unique @db.VarChar(50)
   email            String             @unique @db.VarChar(100)
   password_hash    String             @db.VarChar(255)
