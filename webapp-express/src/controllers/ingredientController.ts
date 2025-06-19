@@ -2,7 +2,6 @@ import prisma from "../app";
 import { Request, Response } from "express";
 
 
-
 async function getAllIngredients(_req: Request, res: Response) {
     try {
         const allIngredients = await prisma.ingredients.findMany();

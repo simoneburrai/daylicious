@@ -3,14 +3,24 @@ import { NextFunction, Request, Response } from "express";
 import jsonwebtoken from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { AppUserRole } from "../types/AppUserRole";
+import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from "@prisma/client/runtime/library";
 
 
+if (!process.env.MY_JWT_SECRET) {
+    console.error("ERRORE CRITICO: MY_JWT_SECRET non è definito nelle variabili d'ambiente. Assicurati che il file .env sia caricato e la variabile sia impostata.");
+    process.exit(1);
+
+}
+const JWT_SECRET: string = process.env.MY_JWT_SECRET;
 interface JwtPayload {
     userId: number,
     email: string,
     role: AppUserRole
 } 
-
+interface LoginUser {
+    identifier: string
+    password: string
+}
 interface User {
     username: string,
     email: string,
@@ -18,7 +28,7 @@ interface User {
 }
 
 
-async function registration(req: Request, res: Response, next: NextFunction): Promise<void> {
+async function registration(req: Request, res: Response, _next: NextFunction): Promise<void> {
 
     const user: User = req.body;
     const {username, email, password } = user;
@@ -50,14 +60,12 @@ async function registration(req: Request, res: Response, next: NextFunction): Pr
         },
     });
 
-    if (!process.env.MY_JWT_SECRET) {
-      throw new Error("MY_JWT_SECRET non è definito nelle variabili d'ambiente.");
-    }
+
 
 
     const token = jsonwebtoken.sign(
       { userId: newUser.user_id, email: newUser.email, role: newUser.role } as JwtPayload,
-      process.env.MY_JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: '1h' }
     );
 
@@ -74,38 +82,129 @@ async function registration(req: Request, res: Response, next: NextFunction): Pr
 
 
     } catch (error) {
-        console.error('Errore durante la registrazione:', error); // Qui vedi il vero oggetto 'error' nella console del server
+    console.error('Errore durante la registrazione:', error); // Qui vedi il vero oggetto 'error' nella console del server
 
-        let errorMessage = 'Errore interno del server durante la registrazione.';
+    let errorMessage = 'Errore interno del server durante la registrazione.';
+    let errorType = 'InternalServerError'; // Default error type
 
-        // Tentativo di estrarre un messaggio leggibile dall'errore
-        if (error instanceof Error) {
-            errorMessage = `Errore interno del server durante la registrazione: ${error.message}`;
-            // Aggiungiamo una gestione specifica per errori di Prisma con BigInt se necessario
-            if (error.name === 'PrismaClientKnownRequestError' || error.name === 'PrismaClientUnknownRequestError') {
-                 // Controlla se l'errore di Prisma ha dettagli che potrebbero includere BigInt
-                 // Ad esempio, se l'errore riguarda un ID o un campo BigInt
-                 if (error.message.includes('BigInt')) { // O un controllo più sofisticato
-                     errorMessage = `Errore del database (BigInt issue): ${error.message.replace(/(\d+)n/g, '$1')}`; // Rimuove 'n' dai BigInt nel messaggio
-                 }
-            }
-        } else if (typeof error === 'object' && error !== null && typeof (error as any).message === 'string') {
-            // Per errori non-Error ma con proprietà message
-            errorMessage = `Errore interno del server durante la registrazione: ${(error as any).message}`;
-        } else if (typeof error === 'bigint') {
-            // Se l'errore stesso fosse un BigInt (caso raro ma coperto)
-            errorMessage = `Errore interno del server: Valore numerico grande non gestito: ${error.toString()}`;
-        } else {
-            errorMessage = `Errore interno del server durante la registrazione: ${String(error)}`; // Converte qualsiasi cosa in stringa
+    if (error instanceof Error) {
+        errorMessage = `Errore interno del server durante la registrazione: ${error.message}`;
+        errorType = error.name; // Ottieni il nome della classe dell'errore (es. 'Error', 'TypeError', 'PrismaClientKnownRequestError')
+
+        if (error instanceof PrismaClientKnownRequestError) {
+            errorMessage = `Errore del database (codice Prisma ${error.code}): ${error.message}`;
+            errorType = 'PrismaClientKnownRequestError';
+        
+        } else if (error instanceof PrismaClientUnknownRequestError) {
+            errorMessage = `Errore sconosciuto del database: ${error.message}`;
+            errorType = 'PrismaClientUnknownRequestError';
+        }
+   
+
+        res.status(500).json({
+            message: errorMessage,
+            errorType: errorType, 
+        });
+        return;
+    }
+    res.status(500).json({
+        message: errorMessage,
+        errorType: errorType
+    });
+    return;
+}
+    }
+
+async function login(req: Request, res: Response, _next: NextFunction): Promise<void> {
+
+    const user: LoginUser = req.body;
+    const {identifier, password } = user;
+
+    if(!identifier || !password) {
+        res.status(400).json({msg: "Errore nell'inserimento dei dati, dati mancanti"});
+        return;
+    }
+   
+        try {
+        const existingUser = await prisma.users.findFirst({
+            where: {
+                OR: [{username : identifier}, {email: identifier}],
+            },
+        })
+
+        if(!existingUser){
+             res.status(401).json({ msg: "Credenziali non valide." });
+            return;
+        }
+        // 4. Confronta la password criptata
+        const passwordMatch = await bcrypt.compare(password, existingUser.password_hash);
+
+        if (!passwordMatch) {
+            res.status(401).json({ msg: "Credenziali non valide." });
+        }
+         const newLastLogin = new Date(); 
+        await prisma.users.update({
+            where: { user_id: existingUser.user_id },
+            data: { last_login: newLastLogin },
+        });
+
+        const tokenPayload : JwtPayload= {
+            userId: existingUser.user_id,
+            email: existingUser.email,
+            role: existingUser.role as AppUserRole
         }
 
+        const token = jsonwebtoken.sign(tokenPayload, JWT_SECRET, { expiresIn: '1h' }); // Il token scade in 1 ora
 
-        // Ora invia la risposta con il messaggio di errore garantito come stringa
-        res.status(500).json({ message: errorMessage });
-        return; // Assicurati che questo return ci sia sempre dopo la risposta
+        // 6. Login di successo: invia il token e i dati utente (senza password)
+        res.status(200).json({
+            msg: "Login effettuato con successo!",
+            token,
+            user: {
+                id: existingUser.user_id,
+                username: existingUser.username,
+                email: existingUser.email,
+                last_login: newLastLogin
+            },
+        });
+    } catch (error) {
+    console.error('Errore durante il login:', error); // Qui vedi il vero oggetto 'error' nella console del server
+
+    let errorMessage = 'Errore interno del server durante il login.';
+    let errorType = 'InternalServerError'; // Default error type
+
+    if (error instanceof Error) {
+        errorMessage = `Errore interno del server durante il login: ${error.message}`;
+        errorType = error.name; // Ottieni il nome della classe dell'errore (es. 'Error', 'TypeError', 'PrismaClientKnownRequestError')
+
+        if (error instanceof PrismaClientKnownRequestError) {
+            errorMessage = `Errore del database (codice Prisma ${error.code}): ${error.message}`;
+            errorType = 'PrismaClientKnownRequestError';
+        
+        } else if (error instanceof PrismaClientUnknownRequestError) {
+            errorMessage = `Errore sconosciuto del database: ${error.message}`;
+            errorType = 'PrismaClientUnknownRequestError';
+        }
+   
+
+        res.status(500).json({
+            message: errorMessage,
+            errorType: errorType, 
+        });
+        return;
+    }
+    res.status(500).json({
+        message: errorMessage,
+        errorType: errorType
+    });
+    return;
+}
     }
 
-    }
 
 
-export default registration;
+
+export {
+    registration,
+    login
+} 
