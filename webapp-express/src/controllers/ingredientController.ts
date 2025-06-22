@@ -13,7 +13,7 @@ async function getAllIngredients(_req: Request, res: Response): Promise<void> {
       // 6. Risposta di successo
         res.status(200).json({
             msg: "Ingredienti ricevuti con Successo",
-            allIngredients: allIngredients
+            ingredients: allIngredients
         });
     } catch (error) {
     console.error('Errore durante la richiesta di tutti gli ingredienti:', error); // Qui vedi il vero oggetto 'error' nella console del server

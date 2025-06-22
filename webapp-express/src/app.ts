@@ -6,6 +6,7 @@ import cors from "cors";
 import recipeRouter from './routers/recipeRouter';
 import ingredientRouter from './routers/ingredientRouter';
 import authRouter from './routers/authRouter';
+import categoryRouter from './routers/categoryRouter';
 dotenv.config();
 
 console.log('Loaded ENV PORT:', process.env.PORT); 
@@ -15,7 +16,7 @@ const port : number = Number(process.env.PORT);
 const prisma = new PrismaClient();
 
 
-
+console.log(process.env.FRONTEND_URL);
 // Configurazione CORS
 const corsOptions = {
     origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
@@ -47,6 +48,7 @@ app.use(express.json());
 app.use("/api/", authRouter);
 app.use("/api/recipes", recipeRouter);
 app.use("/api/ingredients", ingredientRouter);
+app.use("/api/categories", categoryRouter);
 
 // Server in Ascolto nella Porta Specificata;
 app.listen(port, () => {
