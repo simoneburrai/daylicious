@@ -10,7 +10,7 @@ type AllowedMethod = Extract<Method, "get" | "post" | "put" | "delete" | "patch"
 interface ApiContextType {
   loading: boolean;
   error: { msg: string; details: AxiosError | null } | null; // Migliorato il tipo di errore
-  result: any[]; // Potresti voler tipizzare meglio questo array in base ai dati che ti aspetti
+  result: any; // Potresti voler tipizzare meglio questo array in base ai dati che ti aspetti
   apiCall: (url: string, method: AllowedMethod, data?: any) => Promise<void>; // Aggiunto il parametro data e reso Promise<void>
 }
 
@@ -25,7 +25,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   // Spostare gli stati all'interno del componente ApiProvider
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<{ msg: string; details: AxiosError | null } | null>(null);
-  const [result, setResult] = useState<any>([]);
+  const [result, setResult] = useState<any>({});
 
   // 4. Funzione apiCall
   // Usare useCallback per memoizzare la funzione e prevenire ricreazioni inutili
