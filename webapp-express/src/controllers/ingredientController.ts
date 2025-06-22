@@ -59,7 +59,9 @@ async function createIngredient(req: Request, res: Response): Promise<void> {
             "it": string,
             "eng": string,
         },
+        illustration_url: string
     }
+    console.log(req.body);
 
     const ingredient: Ing = req.body
     
@@ -135,7 +137,56 @@ async function createIngredient(req: Request, res: Response): Promise<void> {
     }
 
 
+//Ingredient Category Section
+
+async function getAllIngredientCategories(_req: Request, res: Response): Promise<void> {
+
+
+    try {
+        const allIngredientCategories = await prisma.ingredient_categories.findMany()
+
+      // 6. Risposta di successo
+        res.status(200).json({
+            msg: "Ingredienti ricevuti con Successo",
+            ingredientCategories: allIngredientCategories
+        });
+    } catch (error) {
+        let errorMessage = "Errore durante la richiesta di tutti le categorie ingredienti:"
+        console.error(errorMessage, error); // Qui vedi il vero oggetto 'error' nella console del server
+
+
+         let errorType = 'InternalServerError'; // Default error type
+
+         if (error instanceof Error) {
+        errorMessage = `${errorMessage}:  ${error.message}`;
+        errorType = error.name; // Ottieni il nome della classe dell'errore (es. 'Error', 'TypeError', 'PrismaClientKnownRequestError')
+
+        if (error instanceof PrismaClientKnownRequestError) {
+            errorMessage = `Errore del database (codice Prisma ${error.code}): ${error.message}`;
+            errorType = 'PrismaClientKnownRequestError';
+        
+        } else if (error instanceof PrismaClientUnknownRequestError) {
+            errorMessage = `Errore sconosciuto del database: ${error.message}`;
+            errorType = 'PrismaClientUnknownRequestError';
+        }
+   
+
+        res.status(500).json({
+            message: errorMessage,
+            errorType: errorType, 
+        });
+        return;
+    }
+    res.status(500).json({
+        message: errorMessage,
+        errorType: errorType
+    });
+    return;
+}
+    }
+
 export {
     getAllIngredients,
-    createIngredient
+    createIngredient,
+    getAllIngredientCategories
 }

@@ -6,7 +6,8 @@ const API_URL = {
     INGREDIENTS : `${baseUrl}ingredients`,
     CATEGORIES : `${baseUrl}categories`,
     CATEGORY_VALUES: `${baseUrl}categories/category-values`,
-    RECIPES:`${baseUrl}recipes`
+    RECIPES:`${baseUrl}recipes`,
+    INGREDIENT_CATEGORIES: `${baseUrl}ingredients/categories`,
 }
 
 
