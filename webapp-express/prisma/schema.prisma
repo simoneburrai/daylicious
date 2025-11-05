@@ -33,6 +33,7 @@ model ingredient_categories {
   name             Json
   description      Json?
   illustration_url String?       @db.VarChar(255)
+  ing_category_slug   String            @unique
   ingredients      ingredients[]
 }
 

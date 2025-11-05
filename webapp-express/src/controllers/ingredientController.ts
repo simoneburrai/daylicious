@@ -185,8 +185,97 @@ async function getAllIngredientCategories(_req: Request, res: Response): Promise
 }
     }
 
+
+async function createIngredientCategory(req: Request, res: Response): Promise<void> {
+
+    interface IngCategory {
+        name: {
+            "it": string,
+            "eng": string,
+        },
+        description?: {
+            "it": string,
+            "eng": string,
+        }
+    }
+
+    const input: IngCategory = req.body
+    
+
+        try {
+
+           if (!input || !input.name ||
+                typeof input.name.it !== 'string' || typeof input.name.eng !== 'string' ||
+                input.name.it.trim() === '' || input.name.eng.trim() === '') {
+                res.status(400).json({ msg: "Dati Categoria mancanti o non validi..." });
+                return;
+            }
+        
+         const baseSlug = slugify(input.name.eng, {
+            lower: true,
+            strict: true,
+            trim: true
+        });
+
+        const existentCategory = await prisma.ingredient_categories.findFirst({
+            where:
+            {ing_category_slug: baseSlug}
+        })
+
+        if(existentCategory){
+                res.status(409).json({msg: "Categoria già presente, inserisci un altro valore"});
+                return;
+            }
+
+        const newIngCategory = await prisma.ingredient_categories.create({
+            data: {
+                ...input, 
+                ing_category_slug: baseSlug}
+        })
+
+      // 6. Risposta di successo
+        res.status(201).json({
+            msg: "Categoria inserita con successo",
+            newIngCategory
+        });
+    } catch (error) {
+
+        let errorMessage: string = "Errore durante la richiesta di aggiunta Categoria Ingrediente";
+        console.error(errorMessage, error); // Qui vedi il vero oggetto 'error' nella console del server
+        let errorType = 'InternalServerError'; // Default error type
+
+    if (error instanceof Error) {
+        errorMessage = `${errorMessage} : ${error.message}`;
+        errorType = error.name; // Ottieni il nome della classe dell'errore (es. 'Error', 'TypeError', 'PrismaClientKnownRequestError')
+
+        if (error instanceof PrismaClientKnownRequestError) {
+            errorMessage = `Errore del database (codice Prisma ${error.code}): ${error.message}`;
+            errorType = 'PrismaClientKnownRequestError';
+        
+        } else if (error instanceof PrismaClientUnknownRequestError) {
+            errorMessage = `Errore sconosciuto del database: ${error.message}`;
+            errorType = 'PrismaClientUnknownRequestError';
+        }
+   
+
+        res.status(500).json({
+            message: errorMessage,
+            errorType: errorType, 
+        });
+        return;
+    }
+    res.status(500).json({
+        message: errorMessage,
+        errorType: errorType
+    });
+    return;
+}
+    }
+
+
 export {
     getAllIngredients,
     createIngredient,
-    getAllIngredientCategories
+    getAllIngredientCategories,
+    createIngredientCategory
 }

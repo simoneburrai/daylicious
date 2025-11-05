@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {getAllIngredients, createIngredient, getAllIngredientCategories} from "../controllers/ingredientController";
+import {getAllIngredients, createIngredient,createIngredientCategory, getAllIngredientCategories} from "../controllers/ingredientController";
 
 const ingredientRouter = Router();
 
@@ -7,6 +7,7 @@ const ingredientRouter = Router();
 ingredientRouter.get("/", getAllIngredients);
 ingredientRouter.post("/", createIngredient)
 ingredientRouter.get("/categories", getAllIngredientCategories)
+ingredientRouter.post("/categories", createIngredientCategory)
 
 
 

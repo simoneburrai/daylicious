@@ -1,4 +1,4 @@
-import prisma from "../app";
+import prisma from "../prisma";
 import { Request, Response } from "express";
 
 

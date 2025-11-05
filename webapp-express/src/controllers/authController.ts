@@ -1,4 +1,4 @@
-import prisma from "../app";
+import prisma from "../prisma";
 import { NextFunction, Request, Response } from "express";
 import jsonwebtoken from "jsonwebtoken";
 import bcrypt from "bcryptjs";
