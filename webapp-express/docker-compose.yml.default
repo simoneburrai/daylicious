@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14-alpine
+    container_name: daylicious_postgres
+    restart: always
+    environment:
+      POSTGRES_USER:      # <-- Sostituisci con il tuo USER
+      POSTGRES_PASSWORD:  # <-- Sostituisci con la tua PASSWORD
+      POSTGRES_DB:   # <-- Sostituisci con il tuo DATABASE_NAME
+    ports:
+      - "5432:5432" # Assicurati che 5432 sia la porta usata nel tuo .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

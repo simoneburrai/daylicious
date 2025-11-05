@@ -1,6 +1,5 @@
 import express from 'express';
-import { PrismaClient } from "./generated/prisma";
-import './db';
+// import './db';
 import dotenv from 'dotenv';
 import cors from "cors";
 import recipeRouter from './routers/recipeRouter';
@@ -13,7 +12,7 @@ console.log('Loaded ENV PORT:', process.env.PORT);
 
 const app = express();
 const port : number = Number(process.env.PORT);
-const prisma = new PrismaClient();
+
 
 
 console.log(process.env.FRONTEND_URL);
@@ -45,7 +44,7 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
-app.use("/api/", authRouter);
+app.use("/api", authRouter);
 app.use("/api/recipes", recipeRouter);
 app.use("/api/ingredients", ingredientRouter);
 app.use("/api/categories", categoryRouter);
@@ -55,5 +54,3 @@ app.listen(port, () => {
   console.log(`Server Express in ascolto su http://localhost:${port}`);
 });
 
-
-export default prisma;

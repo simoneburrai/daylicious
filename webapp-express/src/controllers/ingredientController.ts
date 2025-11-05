@@ -1,4 +1,4 @@
-import prisma from "../app";
+import prisma from "../prisma";
 import { Request, Response } from "express";
 import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from "../generated/prisma/runtime/library";
 import slugify from "slugify";
