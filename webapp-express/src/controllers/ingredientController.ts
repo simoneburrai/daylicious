@@ -1,6 +1,7 @@
 import prisma from "../prisma";
 import { Request, Response } from "express";
 import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from "../generated/prisma/runtime/library";
+import { ingredients } from "../generated/prisma";
 import slugify from "slugify";
 // Ingredient Section
 
@@ -8,7 +9,7 @@ async function getAllIngredients(_req: Request, res: Response): Promise<void> {
 
 
         try {
-        const allIngredients = await prisma.ingredients.findMany()
+        const allIngredients : ingredients[] = await prisma.ingredients.findMany()
 
       // 6. Risposta di successo
         res.status(200).json({
@@ -23,6 +24,66 @@ async function getAllIngredients(_req: Request, res: Response): Promise<void> {
 
     if (error instanceof Error) {
         errorMessage = `Errore durante la richiesta di tutti gli ingredienti: ${error.message}`;
+        errorType = error.name; // Ottieni il nome della classe dell'errore (es. 'Error', 'TypeError', 'PrismaClientKnownRequestError')
+
+        if (error instanceof PrismaClientKnownRequestError) {
+            errorMessage = `Errore del database (codice Prisma ${error.code}): ${error.message}`;
+            errorType = 'PrismaClientKnownRequestError';
+        
+        } else if (error instanceof PrismaClientUnknownRequestError) {
+            errorMessage = `Errore sconosciuto del database: ${error.message}`;
+            errorType = 'PrismaClientUnknownRequestError';
+        }
+   
+
+        res.status(500).json({
+            message: errorMessage,
+            errorType: errorType, 
+        });
+        return;
+    }
+    res.status(500).json({
+        message: errorMessage,
+        errorType: errorType
+    });
+    return;
+}
+    }
+
+async function getIngredientBySlug(req: Request, res: Response): Promise<void> {
+        const ingredientSlug = req.params.slug;
+
+        if (!ingredientSlug) {
+        res.status(400).json({ msg: "Slug ingrediente mancante." });
+        return;
+        }
+
+        try {
+            const ingredient: ingredients | null = await prisma.ingredients.findUnique({
+            where: { 
+                ingredient_slug: ingredientSlug // <<< USARE IL CAMPO @unique
+            }})
+        
+        if (!ingredient) {
+            res.status(404).json({ 
+                msg: `Ingrediente con slug '${ingredientSlug}' non trovato.`,
+                ingredient: null // Manteniamo la chiave, ma il valore è null/undefined
+            });
+            return;
+        }
+      // 6. Risposta di successo
+        res.status(200).json({
+            msg: "Ingrediente ricevuto con Successo",
+            ingredient: ingredient
+        });
+    } catch (error) {
+    console.error(`Errore durante la richiesta dell Ingrediente con slug ${ingredientSlug}`, error); // Qui vedi il vero oggetto 'error' nella console del server
+
+    let errorMessage = 'Errore durante la richiesta del singolo Ingrediente';
+    let errorType = 'InternalServerError'; // Default error type
+
+    if (error instanceof Error) {
+        errorMessage = error.message;
         errorType = error.name; // Ottieni il nome della classe dell'errore (es. 'Error', 'TypeError', 'PrismaClientKnownRequestError')
 
         if (error instanceof PrismaClientKnownRequestError) {
@@ -81,7 +142,7 @@ async function createIngredient(req: Request, res: Response): Promise<void> {
             trim: true
         });
 
-        const existentIngredient = await prisma.ingredients.findFirst({
+        const existentIngredient: ingredients | null = await prisma.ingredients.findFirst({
             where:
             {ingredient_slug: baseSlug}
         })
@@ -275,6 +336,7 @@ async function createIngredientCategory(req: Request, res: Response): Promise<vo
 
 export {
     getAllIngredients,
+    getIngredientBySlug,
     createIngredient,
     getAllIngredientCategories,
     createIngredientCategory
