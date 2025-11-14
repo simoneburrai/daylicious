@@ -69,29 +69,6 @@ updateCategoryValue(req, res): Aggiorna un valore di categoria (spesso solo per 
 
 deleteCategoryValue(req, res): Cancella un valore di categoria (spesso solo per ADMIN).
 
-4. ## ingredientController.ts
-Gestisce gli ingredienti di base, le loro categorie e le variazioni specifiche.
-
-Modelli Prisma correlati: ingredients, ingredient_categories, ingredient_variations
-Funzioni comuni:
-getAllIngredientCategories(req, res): Tutte le categorie di ingredienti.
-
-createIngredientCategory(req, res): Nuova categoria di ingredienti (ADMIN).
-
-getAllIngredients(req, res): Tutti gli ingredienti.
-
-getIngredientById(req, res): Un singolo ingrediente.
-
-createIngredient(req, res): Nuovo ingrediente (ADMIN).
-
-updateIngredient(req, res): Aggiorna ingrediente (ADMIN).
-
-getAllIngredientVariations(req, res): Tutte le variazioni.
-
-getVariationsByIngredientId(req, res): Variazioni per un ingrediente specifico.
-
-createIngredientVariation(req, res): Nuova variazione (ADMIN).
-
 5. ## recipeController.ts
 Si occupa della gestione delle ricette.
 
