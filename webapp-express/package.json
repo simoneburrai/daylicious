@@ -10,9 +10,6 @@
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
-    "seed": "npx prisma db seed"
-  },
-  "prisma": {
     "seed": "ts-node prisma/seed.ts" 
   },
   "dependencies": {
