@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const ingredientController_1 = require("../controllers/ingredientController");
+const auth_1 = require("../middleware/auth");
+const ingredientRouter = (0, express_1.Router)();
+ingredientRouter.get("/", ingredientController_1.getAllIngredients);
+ingredientRouter.post("/", auth_1.authenticate, ingredientController_1.createIngredient);
+ingredientRouter.post("/many", ingredientController_1.createManyIngredients);
+ingredientRouter.get("/categories", ingredientController_1.getAllIngredientCategories);
+ingredientRouter.post("/categories", auth_1.authenticate, auth_1.requireAdmin, ingredientController_1.createIngredientCategory);
+ingredientRouter.get("/variations", ingredientController_1.getAllIngredientVariations);
+ingredientRouter.post("/variations", ingredientController_1.createIngredientVariation);
+ingredientRouter.get("/variations/:id", auth_1.authenticate, auth_1.requireAdmin, ingredientController_1.getVariationsByIngredientId);
+ingredientRouter.get("/:slug", ingredientController_1.getIngredientBySlug);
+ingredientRouter.put("/:slug", auth_1.authenticate, auth_1.requireAdmin, ingredientController_1.updateIngredient);
+exports.default = ingredientRouter;
