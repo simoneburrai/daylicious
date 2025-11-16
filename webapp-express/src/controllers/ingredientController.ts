@@ -663,6 +663,11 @@ async function createIngredientVariation(req: Request, res: Response): Promise<v
                 variation_name: variationNameValue,
                 description: input.description ?? null,
                 specific_illustration_url: input.specific_illustration_url ?? null,
+                variation_slug: slugify(variationNameValue.eng, {
+                    lower: true,
+                    strict: true,
+                    trim: true
+                })
             }
         });
 

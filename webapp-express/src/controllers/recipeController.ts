@@ -1,3 +1,4 @@
+import { recipes } from "../generated/prisma";
 import prisma from "../prisma";
 import { Request, Response } from "express";
 
@@ -5,7 +6,7 @@ import { Request, Response } from "express";
 
 async function getAllRecipes(_req: Request, res: Response) {
     try {
-        const allRecipes = await prisma.recipes.findMany();
+        const allRecipes: recipes[] = await prisma.recipes.findMany();
         res.status(200).json(allRecipes);
 
     } catch (error) {
