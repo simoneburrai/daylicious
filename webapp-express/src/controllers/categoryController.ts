@@ -188,7 +188,7 @@ async function createCategoryValue(req: Request, res: Response): Promise<void> {
             "it": string,
             "eng": string,
         },
-        description: {
+        description?: {
             "it": string,
             "eng": string,
         },

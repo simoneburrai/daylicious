@@ -1,14 +1,15 @@
 import { Router } from "express";
 import { getAllIngredients,
-    getIngredientBySlug,
+    getIngredientBySlugOrId,
     createIngredient,
+    createManyIngredients,
+    deleteIngredient,
     getAllIngredientCategories,
     createIngredientCategory,
     getAllIngredientVariations,
     updateIngredient,
     getVariationsByIngredientId,
     createIngredientVariation,
-    createManyIngredients,
     createManyIngredientVariations,} from "../controllers/ingredientController";
 import { authenticate, requireAdmin } from "../middleware/auth";
 
@@ -24,8 +25,9 @@ ingredientRouter.get("/variations", getAllIngredientVariations)
 ingredientRouter.post("/variations",  createIngredientVariation)
 ingredientRouter.post("/variations/many", createManyIngredientVariations)
 ingredientRouter.get("/variations/:id", authenticate, requireAdmin, getVariationsByIngredientId)
-ingredientRouter.get("/:slug", getIngredientBySlug)
+ingredientRouter.get("/:slug", getIngredientBySlugOrId)
 ingredientRouter.put("/:slug", authenticate, requireAdmin, updateIngredient)
+ingredientRouter.delete("/:slug", deleteIngredient)
 
 
 

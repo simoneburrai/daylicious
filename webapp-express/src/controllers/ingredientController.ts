@@ -53,23 +53,25 @@ async function getAllIngredients(_req: Request, res: Response): Promise<void> {
 }
     }
 
-async function getIngredientBySlug(req: Request, res: Response): Promise<void> {
-        const ingredientSlug = req.params.slug;
+async function getIngredientBySlugOrId(req: Request, res: Response): Promise<void> {
+        const identifier = (req.params.id ?? req.params.slug ?? req.params.identifier) as string | undefined;
 
-        if (!ingredientSlug) {
-        res.status(400).json({ msg: "Slug ingrediente mancante." });
+    if (!identifier) {
+        res.status(400).json({ msg: 'Parametro id/slug mancante nei parametri' });
         return;
-        }
+    }
+
 
         try {
-            const ingredient: ingredients | null = await prisma.ingredients.findUnique({
-            where: { 
-                ingredient_slug: ingredientSlug // <<< USARE IL CAMPO @unique
-            }})
+             const whereClause = /^\d+$/.test(identifier) ? { ingredient_id: Number(identifier) } : { ingredient_slug: identifier };
+
+            const ingredient = await prisma.ingredients.findUnique({
+            where: whereClause as any,
+        });
         
         if (!ingredient) {
             res.status(404).json({ 
-                msg: `Ingrediente con slug '${ingredientSlug}' non trovato.`,
+                msg: `Ingrediente con slug or ID'${identifier}' non trovato.`,
                 ingredient: null // Manteniamo la chiave, ma il valore è null/undefined
             });
             return;
@@ -80,7 +82,7 @@ async function getIngredientBySlug(req: Request, res: Response): Promise<void> {
             ingredient: ingredient
         });
     } catch (error) {
-    console.error(`Errore durante la richiesta dell Ingrediente con slug ${ingredientSlug}`, error); // Qui vedi il vero oggetto 'error' nella console del server
+    console.error(`Errore durante la richiesta dell Ingrediente con slug o Id ${identifier}`, error); // Qui vedi il vero oggetto 'error' nella console del server
 
     let errorMessage = 'Errore durante la richiesta del singolo Ingrediente';
     let errorType = 'InternalServerError'; // Default error type
@@ -157,7 +159,6 @@ async function createIngredient(req: Request, res: Response): Promise<void> {
                 return;
             }
 
-            // Build a value that satisfies Prisma.ingredientsCreateArgs['data']
             const prismaData: PrismaIngredientCreateData = {
                 name: ingredient.name,
                 illustration_url: ingredient.illustration_url ?? null,
@@ -210,8 +211,6 @@ async function createManyIngredients(req: Request, res: Response): Promise<void>
     
       type PrismaIngredientCreateData = Prisma.ingredientsCreateArgs['data'];
 
-    // Client input: same as Prisma create data but with a scalar FK instead of the nested relation
-    // Override `name` to a stricter shape for runtime checks
     type ClientIngredientInput = Omit<PrismaIngredientCreateData, 'ingredient_id' | 'ingredient_slug' | 'ingredient_categories' | 'name'> & {
         ing_category_id: number;
         name: { it: string; eng: string };
@@ -352,6 +351,79 @@ async function createManyIngredients(req: Request, res: Response): Promise<void>
     }
 }
 
+async function updateIngredient(req: Request, res: Response): Promise<void> {
+    // Accept either numeric id or slug in the route parameter (admin convenience)
+    const identifier = (req.params.id ?? req.params.slug ?? req.params.identifier) as string | undefined;
+
+    if (!identifier) {
+        res.status(400).json({ msg: 'Parametro id/slug mancante nei parametri' });
+        return;
+    }
+
+    const body = req.body as { ing_category_id?: number; name?: any; illustration_url?: string | null };
+
+    try {
+        const data: any = {};
+
+        if (body.name) data.name = body.name;
+        if (typeof body.illustration_url !== 'undefined') data.illustration_url = body.illustration_url;
+        if (typeof body.ing_category_id === 'number' && !isNaN(body.ing_category_id)) {
+            data.ingredient_categories = { connect: { ing_category_id: body.ing_category_id } };
+        }
+
+        if (Object.keys(data).length === 0) {
+            res.status(400).json({ msg: 'Nessun campo valido da aggiornare fornito' });
+            return;
+        }
+
+    // Build the `where` clause depending on whether identifier is numeric (id) or slug
+    const whereClause = /^\d+$/.test(identifier) ? { ingredient_id: Number(identifier) } : { ingredient_slug: identifier };
+
+        const updated = await prisma.ingredients.update({
+            where: whereClause as any,
+            data,
+        });
+
+        res.status(200).json({ msg: 'Ingrediente aggiornato con successo', updated });
+    } catch (error) {
+        console.error('Errore durante l\'aggiornamento ingrediente', error);
+        if (error instanceof PrismaClientKnownRequestError) {
+            res.status(500).json({ message: `Prisma error ${error.code}: ${error.message}` });
+            return;
+        }
+        res.status(500).json({ message: 'Errore interno durante update ingrediente' });
+    }
+}
+
+async function deleteIngredient(req: Request, res: Response): Promise<void> {
+    // Accept either numeric id or slug in the route parameter (admin convenience)
+    const identifier = (req.params.id ?? req.params.slug ?? req.params.identifier) as string | undefined;
+
+    if (!identifier) {
+        res.status(400).json({ msg: 'Parametro id/slug mancante nei parametri' });
+        return;
+    }
+
+    try {
+        
+    // Build the `where` clause depending on whether identifier is numeric (id) or slug
+    const whereClause = /^\d+$/.test(identifier) ? { ingredient_id: Number(identifier) } : { ingredient_slug: identifier };
+
+        const deletedIngredient = await prisma.ingredients.delete({
+            where: whereClause as any,
+        });
+
+        res.status(200).json({ msg: 'Ingrediente eliminato con successo', deletedIngredient });
+    } catch (error) {
+        console.error('Errore durante l\'aggiornamento ingrediente', error);
+        if (error instanceof PrismaClientKnownRequestError) {
+            res.status(500).json({ message: `Prisma error ${error.code}: ${error.message}` });
+            return;
+        }
+        res.status(500).json({ message: 'Errore interno durante update ingrediente' });
+    }
+}
+
 //Ingredient Category Section
 
 async function getAllIngredientCategories(_req: Request, res: Response): Promise<void> {
@@ -403,26 +475,27 @@ async function getAllIngredientCategories(_req: Request, res: Response): Promise
 
 async function createIngredientCategory(req: Request, res: Response): Promise<void> {
 
-    // Simple input type for creating ingredient categories from client
-    type IngCategoryInput = {
-        name: { it: string; eng: string } | any;
-        description?: any;
-        illustration_url?: string | null;
-        [key: string]: any;
-    };
-    const input: IngCategoryInput = req.body;
+    type PrismaIngCategoryCreateData = Prisma.ingredient_categoriesCreateArgs['data'];
+
+    // Client input: same as Prisma create data but with a scalar FK instead of the nested relation
+    // Override `name` to a stricter shape for runtime checks
+    type ClientIngCategoryInput = Omit<PrismaIngCategoryCreateData, 'ing_category_id' | 'ing_category_slug' | 'name'> & {
+        name: { it: string; eng: string };
+    }
+
+    const ingCategory = req.body as ClientIngCategoryInput;
     
 
         try {
 
-           if (!input || !input.name ||
-                typeof input.name.it !== 'string' || typeof input.name.eng !== 'string' ||
-                input.name.it.trim() === '' || input.name.eng.trim() === '') {
+           if (!ingCategory || !ingCategory.name ||
+                typeof ingCategory.name.it !== 'string' || typeof ingCategory.name.eng !== 'string' ||
+                ingCategory.name.it.trim() === '' || ingCategory.name.eng.trim() === '') {
                 res.status(400).json({ msg: "Dati Categoria mancanti o non validi..." });
                 return;
             }
         
-         const baseSlug = slugify(input.name.eng, {
+         const baseSlug = slugify(ingCategory.name.eng, {
             lower: true,
             strict: true,
             trim: true
@@ -440,13 +513,13 @@ async function createIngredientCategory(req: Request, res: Response): Promise<vo
 
         const newIngCategory = await prisma.ingredient_categories.create({
             data: {
-                ...input, 
+                ...ingCategory, 
                 ing_category_slug: baseSlug}
         })
 
       // 6. Risposta di successo
         res.status(201).json({
-            msg: "Categoria inserita con successo",
+            msg: "Categoria Ingredienti inserita con successo",
             newIngCategory
         });
     } catch (error) {
@@ -531,50 +604,7 @@ async function getAllIngredientVariations(_req: Request, res: Response): Promise
 }
     }
 
-// updateIngredient(req, res): Aggiorna ingrediente (ADMIN).
-async function updateIngredient(req: Request, res: Response): Promise<void> {
-    // Accept either numeric id or slug in the route parameter (admin convenience)
-    const identifier = (req.params.id ?? req.params.slug ?? req.params.identifier) as string | undefined;
 
-    if (!identifier) {
-        res.status(400).json({ msg: 'Parametro id/slug mancante nei parametri' });
-        return;
-    }
-
-    const body = req.body as { ing_category_id?: number; name?: any; illustration_url?: string | null };
-
-    try {
-        const data: any = {};
-
-        if (body.name) data.name = body.name;
-        if (typeof body.illustration_url !== 'undefined') data.illustration_url = body.illustration_url;
-        if (typeof body.ing_category_id === 'number' && !isNaN(body.ing_category_id)) {
-            data.ingredient_categories = { connect: { ing_category_id: body.ing_category_id } };
-        }
-
-        if (Object.keys(data).length === 0) {
-            res.status(400).json({ msg: 'Nessun campo valido da aggiornare fornito' });
-            return;
-        }
-
-    // Build the `where` clause depending on whether identifier is numeric (id) or slug
-    const whereClause = /^\d+$/.test(identifier) ? { ingredient_id: Number(identifier) } : { ingredient_slug: identifier };
-
-        const updated = await prisma.ingredients.update({
-            where: whereClause as any,
-            data,
-        });
-
-        res.status(200).json({ msg: 'Ingrediente aggiornato con successo', updated });
-    } catch (error) {
-        console.error('Errore durante l\'aggiornamento ingrediente', error);
-        if (error instanceof PrismaClientKnownRequestError) {
-            res.status(500).json({ message: `Prisma error ${error.code}: ${error.message}` });
-            return;
-        }
-        res.status(500).json({ message: 'Errore interno durante update ingrediente' });
-    }
-}
 
 // getVariationsByIngredientId(req, res): Variazioni per un ingrediente specifico.
 async function getVariationsByIngredientId(req: Request, res: Response): Promise<void> {
@@ -775,8 +805,10 @@ async function createManyIngredientVariations(req: Request, res: Response): Prom
 
 export {
     getAllIngredients,
-    getIngredientBySlug,
+    getIngredientBySlugOrId,
     createIngredient,
+    createManyIngredients,
+    deleteIngredient,
     getAllIngredientCategories,
     createIngredientCategory,
     getAllIngredientVariations,
@@ -784,5 +816,4 @@ export {
     getVariationsByIngredientId,
     createIngredientVariation,
     createManyIngredientVariations,
-    createManyIngredients
 }
