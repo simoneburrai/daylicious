@@ -5,7 +5,18 @@ import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from "
 import { ingredient_categories, ingredient_variations, ingredients } from "../generated/prisma";
 import slugify from "slugify";
 
+type PrismaIngredientVariationCreateData = Prisma.ingredient_variationsCreateArgs['data'];
 
+    type ClientIngredientVariationInput = Omit<PrismaIngredientVariationCreateData,  
+        'variation_slug' | 'variation_name' | 'description' 
+    > & {
+        // Ridefinisci la tipizzazione specifica per i campi JSONB (che sono obbligatori in input)
+        variation_name: { it: string; eng: string };
+        
+        // description e specific_illustration_url sono opzionali
+        description?: { it: string; eng: string } | null;
+        specific_illustration_url?: string | null;
+    };
 // Ingredient Section
 
 async function getAllIngredients(req: Request, res: Response): Promise<void> {
@@ -672,16 +683,15 @@ async function getVariationsByIngredientId(req: Request, res: Response): Promise
 
 // createIngredientVariation(req, res): Nuova variazione (ADMIN).
 async function createIngredientVariation(req: Request, res: Response): Promise<void> {
-    // TEMP LOGS: stampo un marker per verificare che la route venga chiamata
-    console.log('[DEBUG] createIngredientVariation invoked');
-    console.log('[DEBUG] headers:', { authorization: req.headers.authorization });
-    // attenzione: il body può contenere dati sensibili in altri contesti; rimuoviamo dopo il debug
-    console.log('[DEBUG] body:', req.body);
-
-    const input = req.body as { ingredient_id?: number; variation_name?: any; description?: any; specific_illustration_url?: string | null };
-
-    if (!input || typeof input.ingredient_id !== 'number' || isNaN(input.ingredient_id) || !input.variation_name) {
-        res.status(400).json({ msg: 'Dati obbligatori mancanti: ingredient_id o variation_name' });
+   
+    const input = req.body as ClientIngredientVariationInput;
+    
+    // Rimuovi la logica di 'any' se forzi il tipo corretto nell'input
+    // Questa validazione copre l'obbligatorietà del tipo {it: string, eng: string} in input
+    if (!input || typeof input.ingredient_id !== 'number' || isNaN(input.ingredient_id) || 
+        !input.variation_name || typeof input.variation_name.it !== 'string' || typeof input.variation_name.eng !== 'string') {
+        
+        res.status(400).json({ msg: 'Dati obbligatori mancanti o formattati male: ingredient_id (number) o variation_name ({it: string, eng: string})' });
         return;
     }
 
@@ -693,28 +703,26 @@ async function createIngredientVariation(req: Request, res: Response): Promise<v
             return;
         }
 
-        // Normalize variation_name: accept either a string or a { it, eng } object
-        let variationNameValue: any = input.variation_name;
-        if (typeof variationNameValue === 'string') {
-            variationNameValue = { it: variationNameValue, eng: variationNameValue };
-        }
+        const variationNameValue = input.variation_name;
 
-        // Validate normalized variation_name shape
-        if (!variationNameValue || typeof variationNameValue.it !== 'string' || typeof variationNameValue.eng !== 'string') {
-            res.status(400).json({ msg: 'variation_name deve essere una stringa o un oggetto {it: string, eng: string}' });
-            return;
-        }
+        // Genera lo slug
+        const variationSlug = slugify(variationNameValue.eng, {
+            lower: true,
+            strict: true,
+            trim: true
+        });
 
-        // Check existence / uniqueness using a safe approach: try to find by ingredient_id and exact JSON match
+
+        // Check existence / uniqueness using the generated slug (più sicuro e veloce del JSON match)
         const exists = await prisma.ingredient_variations.findFirst({
             where: {
                 ingredient_id: input.ingredient_id,
-                variation_name: { equals: variationNameValue }
+                variation_slug: variationSlug // Controlla l'unicità tramite slug + ingredient_id (se hai un vincolo @@unique)
             }
         });
 
         if (exists) {
-            res.status(409).json({ msg: 'Variazione già esistente per questo ingrediente' });
+            res.status(409).json({ msg: 'Variazione già esistente per questo ingrediente (slug già utilizzato)' });
             return;
         }
 
@@ -722,14 +730,10 @@ async function createIngredientVariation(req: Request, res: Response): Promise<v
         const newVar = await prisma.ingredient_variations.create({
             data: {
                 ingredient_id: input.ingredient_id,
-                variation_name: variationNameValue,
-                description: input.description ?? null,
+                variation_name: variationNameValue, // Passa l'oggetto JSON tipizzato
+                description: input.description ?? undefined,
                 specific_illustration_url: input.specific_illustration_url ?? null,
-                variation_slug: slugify(variationNameValue.eng, {
-                    lower: true,
-                    strict: true,
-                    trim: true
-                })
+                variation_slug: variationSlug
             }
         });
 
@@ -739,8 +743,8 @@ async function createIngredientVariation(req: Request, res: Response): Promise<v
         const debug = process.env.DEBUG_API === 'true';
         if (error instanceof PrismaClientKnownRequestError) {
             // Unique constraint error (P2002) or foreign key errors will be handled here
-            if ((error as any).code === 'P2002') {
-                res.status(409).json({ message: 'Vincolo di unicità violato (variazione esistente)' });
+            if (error.code === 'P2002') { // Usiamo error.code direttamente
+                res.status(409).json({ message: 'Vincolo di unicità violato (variazione esistente o slug duplicato)' });
                 return;
             }
             const msg = debug ? `${error.code}: ${error.message}` : 'Errore del database durante la creazione';
@@ -758,21 +762,21 @@ async function createIngredientVariation(req: Request, res: Response): Promise<v
 
 // createManyIngredientVariations: bulk create variations from an array payload
 async function createManyIngredientVariations(req: Request, res: Response): Promise<void> {
-    const items = req.body as Array<{
-        ingredient_id?: number;
-        variation_name?: any;
-        description?: any;
-        specific_illustration_url?: string | null;
-    }>;
-
+    
+    // Usiamo IngredientVariationInput per dare un'idea del tipo
+    const items = req.body as Array<Partial<ClientIngredientVariationInput>>; 
+    
     if (!Array.isArray(items) || items.length === 0) {
         res.status(400).json({ msg: 'Fornisci un array non vuoto di variazioni' });
         return;
     }
 
-    // Collect unique ingredient ids to prefetch
+    // 1. Prefetching dei parent ingredienti (Efficiente)
     const uniqueIds = Array.from(new Set(items.map(i => i?.ingredient_id).filter(Boolean))) as number[];
-    const existingIngredients = await prisma.ingredients.findMany({ where: { ingredient_id: { in: uniqueIds } }, select: { ingredient_id: true } });
+    const existingIngredients = await prisma.ingredients.findMany({ 
+        where: { ingredient_id: { in: uniqueIds } }, 
+        select: { ingredient_id: true } 
+    });
     const existingIdsSet = new Set(existingIngredients.map(i => i.ingredient_id));
 
     const created: any[] = [];
@@ -781,45 +785,73 @@ async function createManyIngredientVariations(req: Request, res: Response): Prom
     for (let i = 0; i < items.length; i++) {
         const it = items[i];
 
+        // Validazione base
         if (!it || typeof it.ingredient_id !== 'number' || isNaN(it.ingredient_id) || !it.variation_name) {
             processingErrors.push({ index: i, reason: 'Dati mancanti o non validi (ingredient_id e variation_name richiesti)', item: it });
             continue;
         }
 
+        // Controllo esistenza ingrediente parent
         if (!existingIdsSet.has(it.ingredient_id)) {
             processingErrors.push({ index: i, reason: `Ingrediente id ${it.ingredient_id} non trovato`, item: it });
             continue;
         }
 
-        // normalize
-        let variationNameVal: any = it.variation_name;
-        if (typeof variationNameVal === 'string') variationNameVal = { it: variationNameVal, eng: variationNameVal };
+        // 2. Normalizzazione e Validazione avanzata del nome
+        let variationNameVal: { it: string, eng: string };
+        
+        // Gestione se è una stringa (per retrocompatibilità/input semplice)
+        if (typeof it.variation_name === 'string') {
+            variationNameVal = { it: it.variation_name, eng: it.variation_name };
+        } else {
+            variationNameVal = it.variation_name as { it: string, eng: string };
+        }
+        
         if (!variationNameVal || typeof variationNameVal.it !== 'string' || typeof variationNameVal.eng !== 'string') {
-            processingErrors.push({ index: i, reason: 'variation_name deve essere stringa o {it,eng} object', item: it });
+            processingErrors.push({ index: i, reason: 'variation_name deve essere stringa o {it: string, eng: string}', item: it });
             continue;
         }
 
+        // 3. Generazione dello SLUG (CRITICO!)
+        const variationSlug = slugify(variationNameVal.eng, {
+            lower: true,
+            strict: true,
+            trim: true
+        });
+
+
         try {
-            // check exists
-            const exists = await prisma.ingredient_variations.findFirst({ where: { ingredient_id: it.ingredient_id, variation_name: { equals: variationNameVal } } });
+            // 4. Controllo Unicità (più robusto tramite Slug)
+            const exists = await prisma.ingredient_variations.findFirst({ 
+                where: { 
+                    ingredient_id: it.ingredient_id, 
+                    variation_slug: variationSlug // Controlliamo sullo SLUG, non sul JSON
+                } 
+            });
+            
             if (exists) {
-                processingErrors.push({ index: i, reason: 'Variazione già esistente', item: it });
+                processingErrors.push({ index: i, reason: 'Variazione già esistente (slug duplicato)', item: it });
                 continue;
             }
 
-            const createdVar = await prisma.ingredient_variations.create({ data: {
-                ingredient_id: it.ingredient_id,
-                variation_name: variationNameVal,
-                description: it.description ?? null,
-                specific_illustration_url: it.specific_illustration_url ?? null,
-            }});
+            // 5. Creazione con gestione corretta dei campi opzionali
+            const createdVar = await prisma.ingredient_variations.create({ 
+                data: {
+                    ingredient_id: it.ingredient_id,
+                    variation_name: variationNameVal,
+                    // Usa ?? null per i campi opzionali che possono essere undefined/null
+                    description: it.description ?? undefined, 
+                    specific_illustration_url: it.specific_illustration_url ?? undefined,
+                    variation_slug: variationSlug // <-- AGGIUNTA FONDAMENTALE
+                }
+            });
 
             created.push(createdVar);
         } catch (error) {
-            console.error('Errore creando variazione in bulk', error);
+            console.error('Errore creando variazione in bulk all\'indice', i, error);
             // map common Prisma errors
-            if (error instanceof PrismaClientKnownRequestError && (error as any).code === 'P2002') {
-                processingErrors.push({ index: i, reason: 'Vincolo di unicità violato', item: it });
+            if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+                processingErrors.push({ index: i, reason: 'Vincolo di unicità violato (DB)', item: it });
             } else {
                 processingErrors.push({ index: i, reason: error instanceof Error ? error.message : String(error), item: it });
             }
@@ -832,8 +864,7 @@ async function createManyIngredientVariations(req: Request, res: Response): Prom
         created_count: created.length,
         failed: processingErrors,
         created: created
-    });
-}
+    })};
 
 export {
     getAllIngredients,
