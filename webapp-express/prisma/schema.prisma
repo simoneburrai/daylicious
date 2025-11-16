@@ -46,7 +46,7 @@ model ingredient_variations {
   ingredients               ingredients          @relation(fields: [ingredient_id], references: [ingredient_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_ingredient")
   recipe_ingredients        recipe_ingredients[]
   user_ingredients          user_ingredients[]
-
+  variation_slug            String             @unique
   @@unique([ingredient_id, variation_name])
 }
 

@@ -206,7 +206,7 @@ async function createIngredient(req: Request, res: Response): Promise<void> {
 }
     }
 
-export async function createManyIngredients(req: Request, res: Response): Promise<void> {
+async function createManyIngredients(req: Request, res: Response): Promise<void> {
     
       type PrismaIngredientCreateData = Prisma.ingredientsCreateArgs['data'];
 
@@ -531,9 +531,6 @@ async function getAllIngredientVariations(_req: Request, res: Response): Promise
 }
     }
 
-
-
-
 // updateIngredient(req, res): Aggiorna ingrediente (ADMIN).
 async function updateIngredient(req: Request, res: Response): Promise<void> {
     // Accept either numeric id or slug in the route parameter (admin convenience)
@@ -782,5 +779,5 @@ export {
     getVariationsByIngredientId,
     createIngredientVariation,
     createManyIngredientVariations,
+    createManyIngredients
 }
-
