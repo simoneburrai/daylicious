@@ -6,6 +6,7 @@ import recipeRouter from './routers/recipeRouter';
 import ingredientRouter from './routers/ingredientRouter';
 import authRouter from './routers/authRouter';
 import categoryRouter from './routers/categoryRouter';
+import getCurrentLang, { setLanguageMiddleware } from './middleware/setLanguageMiddleware';
 dotenv.config();
 
 console.log('Loaded ENV PORT:', process.env.PORT); 
@@ -43,6 +44,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json());
+app.use(setLanguageMiddleware)
+
+// Definizione delle rotte
 
 app.use("/api", authRouter);
 app.use("/api/recipes", recipeRouter);

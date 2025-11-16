@@ -8,11 +8,42 @@ import slugify from "slugify";
 
 // Ingredient Section
 
-async function getAllIngredients(_req: Request, res: Response): Promise<void> {
+async function getAllIngredients(req: Request, res: Response): Promise<void> {
 
-
-        try {
-        const allIngredients : ingredients[] = await prisma.ingredients.findMany()
+    const { search } = req.query; 
+    
+    // Ora puoi accedere alla lingua qui, garantita dal middleware
+    const currentLang = req.lang || 'eng'; // Fallback per sicurezza
+    
+    try {
+        let whereCondition: Prisma.ingredientsWhereInput = {};
+        
+        if (search) {
+            const searchTerm = String(search).toLowerCase().trim();
+            
+           whereCondition = {
+                OR: [
+                    // 1. RICERCA NELLA LINGUA CORRENTE (priorità)
+                    {
+                        name: {
+                            path: [currentLang], 
+                            string_contains: searchTerm,
+                            mode: 'insensitive',
+                        }
+                    },
+                    // 2. RICERCA SULLO SLUG (come fallback/supporto)
+                    {
+                        ingredient_slug: {
+                            contains: searchTerm,
+                            mode: 'insensitive',
+                        }
+                    }
+                ]
+            };
+        }
+        const allIngredients : ingredients[] = await prisma.ingredients.findMany({
+            where: whereCondition
+        })
 
       // 6. Risposta di successo
         res.status(200).json({
