@@ -118,14 +118,7 @@ async function getIngredientBySlugOrId(req: Request, res: Response): Promise<voi
 
 async function createIngredient(req: Request, res: Response): Promise<void> {
 
-    // Use Prisma-generated types where possible
-    // Prisma expects nested relation objects for relations. We accept a
-    // client-friendly payload (with `ing_category_id`) and map it to the
-    // Prisma `ingredientsCreateArgs['data']` shape below.
     type PrismaIngredientCreateData = Prisma.ingredientsCreateArgs['data'];
-
-    // Client input: same as Prisma create data but with a scalar FK instead of the nested relation
-    // Override `name` to a stricter shape for runtime checks
     type ClientIngredientInput = Omit<PrismaIngredientCreateData, 'ingredient_id' | 'ingredient_slug' | 'ingredient_categories' | 'name'> & {
         ing_category_id: number;
         name: { it: string; eng: string };
@@ -168,10 +161,18 @@ async function createIngredient(req: Request, res: Response): Promise<void> {
 
             const newIngredient = await prisma.ingredients.create({ data: prismaData });
 
+    
+            const newIngredientVariation: ingredient_variations = await prisma.ingredient_variations.create({ data: { variation_name: ingredient.name,
+                variation_slug: baseSlug,
+                ingredient_id: newIngredient.ingredient_id
+
+             } });
+
       // 6. Risposta di successo
         res.status(201).json({
             msg: "Ingrediente inserito con successo",
-            newIngredient: newIngredient
+            newIngredient: newIngredient,
+            newIngredientVariation: newIngredientVariation
         });
     } catch (error) {
 
