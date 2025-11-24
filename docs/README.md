@@ -1,108 +1,108 @@
-# 🍽️ Daylicious - Recap Progetto
+# 🍽️ Daylicious - Project Recap
 
-**Daylicious** è una web application in fase di sviluppo, pensata per semplificare la gestione quotidiana della cucina 🧑‍🍳. Offre un sistema centralizzato per organizzare ricette, pianificare pasti, monitorare la dispensa e ridurre gli sprechi alimentari.
+**Daylicious** is a web application currently under development, designed to simplify the daily management of your kitchen 🧑‍🍳. It offers a centralized system for organizing recipes, planning meals, monitoring the pantry, and reducing food waste.
 
 ---
 
 ## 🧠 1. Main Idea
 
-L’obiettivo principale di **Daylicious** è fornire una **piattaforma intelligente e personalizzata** per:
+The main objective of **Daylicious** is to provide an **intelligent and personalized platform** for:
 
-- La gestione delle **ricette**
-- La **pianificazione dei pasti**
-- Il **monitoraggio degli ingredienti disponibili**
+* **Recipe** management
+* **Meal planning**
+* **Monitoring available ingredients**
 
-👉 Lo scopo è andare oltre la semplice raccolta di ricette, offrendo un ecosistema culinario digitale completo.
-
----
-
-## ✨ 2. Features Principali
-
-### 📘 Gestione Ricette
-- Nome, descrizione, tempi di preparazione/cottura
-- Porzioni, URL esterni e illustrazioni
-- Categorizzazione e associazione ingredienti
-
-### 📅 Pianificazione Pasti (Meal Planning)
-- Piani con nome e date di inizio/fine
-- Aggiunta di ricette specifiche per giorno e tipo pasto (colazione, pranzo, cena)
-- Porzioni pianificate
-
-### 🧺 Gestione della Dispensa
-- Ingredienti posseduti, quantità, unità di misura
-- Data di aggiunta e data di scadenza
-
-### 👤 Autenticazione e Gestione Utenti
-- Registrazione/login (username/email + password hashata)
-- Stato premium (`is_premium`) per funzionalità avanzate
+👉 The goal is to go beyond a simple recipe collection, offering a complete digital culinary ecosystem.
 
 ---
 
-## 🧩 3. Features Secondarie / Dettagli Aggiuntivi
+## ✨ 2. Core Features
 
-### 🏷️ Categorizzazione Avanzata
-- Categorie generali e valori specifici (es. "Tipo cucina → Italiana")
-- Categorie ingredienti (es. Verdure, Carne, Latticini)
+### 📘 Recipe Management
+* Name, description, preparation/cooking times
+* Portions, external URLs, and illustrations
+* Categorization and ingredient association
 
-### 🔄 Variazioni Ingredienti
-- Esempio: Latte → Intero, Scremato, Vegetale
-- Ogni variazione ha descrizione e immagine
+### 📅 Meal Planning
+* Plans with a name and start/end dates
+* Addition of specific recipes per day and meal type (breakfast, lunch, dinner)
+* Planned portions
 
-### 🧮 Quantità per Ricetta
-- Tracciamento delle quantità/unità per ciascuna variazione ingrediente
+### 🧺 Pantry Management
+* Owned ingredients, quantity, unit of measurement
+* Addition date and expiration date
+
+### 👤 User Authentication and Management
+* Registration/login (username/email + hashed password)
+* Premium status (`is_premium`) for advanced functionalities
+
+---
+
+## 🧩 3. Secondary Features / Additional Details
+
+### 🏷️ Advanced Categorization
+* General categories and specific values (e.g., "Cuisine Type → Italian")
+* Ingredient categories (e.g., Vegetables, Meat, Dairy)
+
+### 🔄 Ingredient Variations
+* Example: Milk → Whole, Skimmed, Plant-based
+* Each variation has a description and image
+
+### 🧮 Quantity per Recipe
+* Tracking of quantities/units for each ingredient variation
 
 ### 🕒 Timestamp
-- Campi `created_at`, `last_login` per monitoraggio utenti e dati
+* Fields `created_at`, `last_login` for user and data monitoring
 
 ---
 
-## 🔮 4. Prossime Implementazioni
+## 🔮 4. Next Implementations
 
-### 💻 Frontend Interattivo
-- UI in React (probabilmente con Next.js per vantaggi SEO e SSR)
+### 💻 Interactive Frontend
+* UI in React (likely with Next.js for SEO and SSR advantages)
 
-### 🔍 Ricerca & Filtri Avanzati
-- Filtri per categoria, ingredienti, tempi di cottura, ecc.
+### 🔍 Advanced Search & Filters
+* Filters by category, ingredients, cooking times, etc.
 
-### 🔐 Autenticazione Reale
-- Hashing con `bcryptjs`
-- Gestione token con `JWT` per sessioni sicure
+### 🔐 Real Authentication
+* Hashing with `bcryptjs`
+* Token management with `JWT` for secure sessions
 
-### ⏰ Notifiche Scadenza
-- Avvisi automatici sugli ingredienti in scadenza
+### ⏰ Expiration Notifications
+* Automatic alerts for expiring ingredients
 
-### 🛒 Lista della Spesa
-- Generazione automatica in base a piani pasto e scorte
+### 🛒 Shopping List
+* Automatic generation based on meal plans and stock
 
-### 👥 Gestione Ruoli Utente
-- Differenziazione tra utenti base, premium e admin
+### 👥 User Role Management
+* Differentiation between basic, premium, and admin users
 
-### 🤖 AI & Visione Computazionale
-- 📷 Riconoscimento immagini ingredienti (es. foto del frigo)
-- 🍲 Suggerimenti automatici di ricette
-- 🥬 Analisi della freschezza degli ingredienti (futura)
+### 🤖 AI & Computer Vision (Future)
+* 📷 Ingredient image recognition (e.g., photo of the fridge)
+* 🍲 Automatic recipe suggestions
+* 🥬 Ingredient freshness analysis (long-term future)
 
 ---
 
-## 🛠️ 5. Tecnologie Utilizzate
+## 🛠️ 5. Technologies Used
 
-| Ambito         | Strumento / Tecnologia                       |
+| Area           | Tool / Technology                           |
 |----------------|----------------------------------------------|
-| Backend        | TypeScript, Node.js, Express.js              |
-| Database       | PostgreSQL + Prisma ORM                      |
-| Config         | dotenv per variabili d’ambiente              |
-| Sicurezza      | bcryptjs (hashing), JWT (auth futura)        |
-| Middleware     | `cors`, `express.json()`                     |
-| Frontend (WIP) | React, Next.js (probabilmente)               |
-| AI (futuro)    | TensorFlow.js, OpenCV, Google Vision API     |
-| IDE            | Visual Studio Code (con estensioni TS + DB)  |
+| Backend        | TypeScript, Node.js, Express.js              |
+| Database       | PostgreSQL + Prisma ORM                      |
+| Config         | `dotenv` for environment variables             |
+| Security       | `bcryptjs` (hashing), `JWT` (future auth)    |
+| Middleware     | `cors`, `express.json()`                     |
+| Frontend (WIP) | React, Next.js (likely)                      |
+| AI (Future)    | TensorFlow.js, OpenCV, Google Vision API     |
+| IDE            | Visual Studio Code (with TS + DB extensions) |
 
 ---
 
-## 🚀 Conclusioni
+## 🚀 Conclusion
 
-Daylicious è un progetto ambizioso e ben strutturato che combina le tecnologie più moderne con un approccio user-centric. L’obiettivo è **rendere la gestione quotidiana del cibo un'esperienza più semplice, intelligente e sostenibile**, con la visione futura di integrare l’intelligenza artificiale per un’inventario automatizzato e raccomandazioni smart.
+Daylicious is an ambitious and well-structured project that combines modern technologies with a user-centric approach. The goal is to **make the daily management of food a simpler, smarter, and more sustainable experience**, with a future vision of integrating artificial intelligence for automated inventory and smart recommendations.
 
 ---
 
-> 🍝 *"Organizza la tua cucina. Semplifica la tua vita."*
+> 🍝 *"Organize your kitchen. Simplify your life."*
