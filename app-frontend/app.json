@@ -4,7 +4,7 @@
     "slug": "daylicious",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "",
     "scheme": "daylicious",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
