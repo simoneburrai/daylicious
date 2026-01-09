@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "daylicious",
-    "slug": "daylicious",
+    "name": "app-frontend",
+    "slug": "app-frontend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "",
-    "scheme": "daylicious",
+    "icon": "./assets/images/icon.png",
+    "scheme": "appfrontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
